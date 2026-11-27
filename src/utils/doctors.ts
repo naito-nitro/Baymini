@@ -606,3 +606,63 @@ export function buildAppointmentCalendarTemplateUrl(
   }
   return `https://calendar.google.com/calendar/render?${params.toString()}`;
 }
+
+export function formatApproximateLocationLabel(
+  city?: string,
+  region?: string,
+  country?: string
+): string {
+  const cleanCity = stripEmojis(city || '').trim();
+  const cleanRegion = stripEmojis(region || '').trim();
+  const cleanCountry = stripEmojis(country || '').trim();
+
+  const placeParts: string[] = [];
+  if (cleanCity) {
+    placeParts.push(cleanCity);
+  } else if (cleanRegion) {
+    placeParts.push(cleanRegion);
+  }
+  if (cleanCountry && cleanCountry.toLowerCase() !== placeParts[0]?.toLowerCase()) {
+    placeParts.push(cleanCountry);
+  }
+
+  return placeParts.length > 0
+    ? `Approximate area: ${placeParts.join(', ')}`
+    : 'Approximate area';
+}
+
+export interface GeolocationErrorLike {
+  code?: number;
+  message?: string;
+}
+
+export function describeGeolocationFailure(
+  error: GeolocationErrorLike | null | undefined
+): string {
+  const rawMessage = (error?.message || '').toLowerCase();
+  const isBlockedByFramePolicy =
+    rawMessage.includes('permissions policy') ||
+    rawMessage.includes('feature policy') ||
+    rawMessage.includes('disallowed') ||
+    rawMessage.includes('does not have permission') ||
+    rawMessage.includes('only secure origins');
+
+  if (isBlockedByFramePolicy) {
+    return 'Browser location is blocked by this preview frame policy. Open the site permissions icon in your browser address bar to allow location, or type your neighborhood above.';
+  }
+
+  if (error?.code === 1) {
+    return 'Location permission is blocked for this site. Click the lock or location icon in your browser address bar to allow location, or type your neighborhood above.';
+  }
+
+  if (error?.code === 2) {
+    return 'Your device could not determine a location right now. Check location permissions in your browser address bar, or type your neighborhood above.';
+  }
+
+  if (error?.code === 3) {
+    return 'Location detection timed out. Check location permissions in your browser address bar, or type your neighborhood above.';
+  }
+
+  return 'Could not detect your location automatically. Allow location access in your browser address bar, or type your neighborhood above.';
+}
+

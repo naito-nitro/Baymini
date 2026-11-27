@@ -5,7 +5,9 @@ import {
   buildAppointmentCalendarTemplateUrl,
   buildAppointmentIcs,
   buildGoogleMapsDirectionsUrl,
+  describeGeolocationFailure,
   expandSpecialtyQuery,
+  formatApproximateLocationLabel,
   formatAttachedSymptomBrief,
   generateNext7Days,
   hasCalendarConflict,
@@ -143,3 +145,35 @@ test('appointment calendar event, ICS file, directions URL, and attached brief s
   assert.ok(dirUrl.includes('destination=23.744%2C90.386'));
   assert.ok(dirUrl.includes('destination_place_id=place_123'));
 });
+
+test('approximate location labels and geolocation failure diagnostics distinguish all error causes cleanly', () => {
+  assert.equal(
+    formatApproximateLocationLabel('Dhaka', 'Dhaka Division', 'Bangladesh'),
+    'Approximate area: Dhaka, Bangladesh'
+  );
+  assert.equal(
+    formatApproximateLocationLabel('', 'California', 'United States'),
+    'Approximate area: California, United States'
+  );
+  assert.equal(formatApproximateLocationLabel('', '', ''), 'Approximate area');
+
+  const iframeMsg = describeGeolocationFailure({
+    code: 1,
+    message: 'Geolocation has been disabled in this document by permissions policy.',
+  });
+  assert.ok(iframeMsg.toLowerCase().includes('frame policy'));
+
+  const deniedMsg = describeGeolocationFailure({ code: 1, message: 'User denied Geolocation' });
+  assert.ok(deniedMsg.toLowerCase().includes('address bar'));
+
+  const unavailableMsg = describeGeolocationFailure({ code: 2, message: 'Position unavailable' });
+  assert.ok(unavailableMsg.toLowerCase().includes('could not determine'));
+
+  const timeoutMsg = describeGeolocationFailure({ code: 3, message: 'Timeout expired' });
+  assert.ok(timeoutMsg.toLowerCase().includes('timed out'));
+
+  for (const msg of [iframeMsg, deniedMsg, unavailableMsg, timeoutMsg]) {
+    assert.equal(/\p{Extended_Pictographic}/u.test(msg), false);
+  }
+});
+

@@ -23,12 +23,15 @@ import {
   RADIUS_OPTIONS,
   SPECIALTY_OPTIONS,
   buildGoogleMapsDirectionsUrl,
+  describeGeolocationFailure,
   formatDistanceKm,
   normalizeSpecialtyHint,
+  type GeolocationErrorLike,
   type RadiusKm,
   type SpecialtyOption,
 } from '../../utils/doctors';
 import {
+  fetchApproximateIpLocation,
   fetchMapsConfig,
   geocodeLocationQuery,
   reverseGeocodeCoordinates,
@@ -89,6 +92,7 @@ export function DoctorsView() {
   const [triageBannerDismissed, setTriageBannerDismissed] = useState(false);
 
   const searchRequestSeqRef = useRef(0);
+  const locationInputRef = useRef<HTMLInputElement | null>(null);
 
   // Keep specialty synced if user arrives from Symptoms Checker or Chatbot action chip
   useEffect(() => {
@@ -173,48 +177,76 @@ export function DoctorsView() {
     void runSearch(userLocation, activeSpecialty, radiusKm);
   }, [userLocation, activeSpecialty, radiusKm, runSearch]);
 
+  const handleApproximateIpFallback = useCallback(
+    async (gpsError: GeolocationErrorLike | null) => {
+      try {
+        const approxLocation = await fetchApproximateIpLocation(4000);
+        if (approxLocation) {
+          setUserLocation(approxLocation);
+          setLocationInput(approxLocation.label);
+          setLocationNotice(
+            'Using approximate network location. For exact results, enable browser location or type your neighborhood above.'
+          );
+          showToast(`Using ${approxLocation.label}.`);
+          return;
+        }
+      } catch {
+        // Fall through to concise error guidance below
+      }
+
+      setLocationNotice(describeGeolocationFailure(gpsError));
+      locationInputRef.current?.focus();
+    },
+    [setUserLocation, showToast]
+  );
+
   const handleUseLiveLocation = () => {
     setLocationNotice(null);
+    setLocatingGps(true);
+
     if (typeof navigator === 'undefined' || !navigator.geolocation) {
-      setLocationNotice(
-        'Live location is not supported in this browser. Enter your neighborhood or city manually below.'
-      );
+      void handleApproximateIpFallback(null).finally(() => {
+        setLocatingGps(false);
+      });
       return;
     }
 
-    setLocatingGps(true);
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
-        try {
-          const label = await reverseGeocodeCoordinates(lat, lng);
-          const nextLoc: UserLocation = { lat, lng, label };
-          setUserLocation(nextLoc);
-          setLocationInput(label);
-          showToast(`Location set to ${label}.`);
-        } catch {
-          const nextLoc: UserLocation = { lat, lng, label: 'Current Location' };
-          setUserLocation(nextLoc);
-          setLocationInput('Current Location');
-        } finally {
-          setLocatingGps(false);
-        }
-      },
-      (err) => {
+    try {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          try {
+            const label = await reverseGeocodeCoordinates(lat, lng);
+            const nextLoc: UserLocation = { lat, lng, label };
+            setUserLocation(nextLoc);
+            setLocationInput(label);
+            showToast(`Location set to ${label}.`);
+          } catch {
+            const nextLoc: UserLocation = { lat, lng, label: 'Current Location' };
+            setUserLocation(nextLoc);
+            setLocationInput('Current Location');
+          } finally {
+            setLocatingGps(false);
+          }
+        },
+        (err) => {
+          void handleApproximateIpFallback({
+            code: err.code,
+            message: err.message,
+          }).finally(() => {
+            setLocatingGps(false);
+          });
+        },
+        { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
+      );
+    } catch (syncErr) {
+      void handleApproximateIpFallback({
+        message: syncErr instanceof Error ? syncErr.message : String(syncErr),
+      }).finally(() => {
         setLocatingGps(false);
-        if (err.code === err.PERMISSION_DENIED) {
-          setLocationNotice(
-            'Location permission was declined. You can type your area or city (e.g., Dhanmondi, Dhaka) in the search box instead.'
-          );
-        } else {
-          setLocationNotice(
-            'Could not detect your live location right now. Please type your area or city in the search box.'
-          );
-        }
-      },
-      { enableHighAccuracy: false, timeout: 10000, maximumAge: 180000 }
-    );
+      });
+    }
   };
 
   const handleManualLocationSearch = async (queryOverride?: string) => {
@@ -408,6 +440,7 @@ export function DoctorsView() {
                   aria-hidden="true"
                 />
                 <input
+                  ref={locationInputRef}
                   type="text"
                   value={locationInput}
                   onChange={(e) => {
@@ -446,11 +479,14 @@ export function DoctorsView() {
             </div>
           )}
 
-          {/* Calm Location Notice (GPS denied or geocode miss) */}
+          {/* Calm Location Notice (Approximate network fallback, GPS error, or geocode miss) */}
           {locationNotice && (
-            <div className="rounded-xl border border-bm-prompt/35 bg-bm-surface-subtle px-3.5 py-2.5 flex items-start gap-2.5 text-xs text-bm-text-muted leading-relaxed">
+            <div
+              role="status"
+              className="rounded-xl border border-bm-prompt/35 bg-bm-surface-subtle px-3.5 py-2.5 flex items-start gap-2.5 text-xs text-bm-text leading-relaxed"
+            >
               <AlertCircle
-                className="w-4 h-4 text-bm-prompt shrink-0 mt-0.5"
+                className="w-4 h-4 text-bm-prompt dark:text-[#E8A559] shrink-0 mt-0.5"
                 strokeWidth={1.75}
                 aria-hidden="true"
               />

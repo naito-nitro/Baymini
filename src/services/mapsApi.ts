@@ -1,4 +1,5 @@
 import type { DoctorProfile, UserLocation } from '../types/baymini';
+import { formatApproximateLocationLabel } from '../utils/doctors';
 
 export interface MapsConfigResponse {
   configured: boolean;
@@ -140,4 +141,96 @@ export async function searchNearbyDoctors(params: {
     broadened: Boolean(data.broadened),
     specialtySearched: data.specialtySearched || params.specialty,
   };
+}
+
+async function fetchJsonWithTimeout<T>(
+  url: string,
+  timeoutMs: number
+): Promise<T | null> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, {
+      method: 'GET',
+      signal: controller.signal,
+    });
+    if (!response.ok) return null;
+    return (await response.json()) as T;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function isValidCoordinatePair(lat: number, lng: number): boolean {
+  return (
+    Number.isFinite(lat) &&
+    Number.isFinite(lng) &&
+    lat >= -90 &&
+    lat <= 90 &&
+    lng >= -180 &&
+    lng <= 180 &&
+    !(lat === 0 && lng === 0)
+  );
+}
+
+/**
+ * Lightweight HTTPS approximate IP-location fallback when browser geolocation
+ * is unavailable, timed out, or blocked by iframe/browser policy.
+ * Primary: get.geojs.io (4s timeout), fallback: ipwho.is (4s timeout).
+ */
+export async function fetchApproximateIpLocation(
+  timeoutMs = 4000
+): Promise<UserLocation | null> {
+  const geojs = await fetchJsonWithTimeout<{
+    latitude?: string | number;
+    longitude?: string | number;
+    city?: string;
+    region?: string;
+    country?: string;
+  }>('https://get.geojs.io/v1/ip/geo.json', timeoutMs);
+
+  if (geojs) {
+    const lat = Number(geojs.latitude);
+    const lng = Number(geojs.longitude);
+    if (isValidCoordinatePair(lat, lng)) {
+      return {
+        lat,
+        lng,
+        label: formatApproximateLocationLabel(
+          geojs.city,
+          geojs.region,
+          geojs.country
+        ),
+      };
+    }
+  }
+
+  const ipwho = await fetchJsonWithTimeout<{
+    success?: boolean;
+    latitude?: number | string;
+    longitude?: number | string;
+    city?: string;
+    region?: string;
+    country?: string;
+  }>('https://ipwho.is/', timeoutMs);
+
+  if (ipwho && ipwho.success !== false) {
+    const lat = Number(ipwho.latitude);
+    const lng = Number(ipwho.longitude);
+    if (isValidCoordinatePair(lat, lng)) {
+      return {
+        lat,
+        lng,
+        label: formatApproximateLocationLabel(
+          ipwho.city,
+          ipwho.region,
+          ipwho.country
+        ),
+      };
+    }
+  }
+
+  return null;
 }
