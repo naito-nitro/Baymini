@@ -1,0 +1,8 @@
+{
+  "name": "Baymini v2",
+  "description": "AI-powered personal health and wellness platform for daily routines, safety-first symptom guidance, and live doctor booking.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

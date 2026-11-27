@@ -1,0 +1,227 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --bm-primary: #1B4332;
+  --bm-primary-hover: #2D6A4F;
+  --bm-primary-foreground: #FFFFFF;
+  --bm-secondary: #2D6A4F;
+  --bm-sage: #A8BFA8;
+  --bm-tint: #E3EFE8;
+  --bm-bg: #F6F8F5;
+  --bm-surface: #FFFFFF;
+  --bm-surface-subtle: #F1F5F2;
+  --bm-border: #E1E8E2;
+  --bm-glass: rgba(255, 255, 255, 0.78);
+  --bm-text: #13221B;
+  --bm-text-muted: #52665B;
+
+  /* Semantic Status Tokens */
+  --bm-status-emergency: #C93B3B;
+  --bm-status-prompt: #C47A2C;
+  --bm-status-routine: #2B7A78;
+  --bm-status-confirmed: #2D6A4F;
+
+  color-scheme: light;
+}
+
+.dark {
+  --bm-primary: #68C294;
+  --bm-primary-hover: #7BD0A4;
+  --bm-primary-foreground: #0D1813;
+  --bm-secondary: #3B8C68;
+  --bm-sage: #68C294;
+  --bm-tint: #1B3127;
+  --bm-bg: #0D1813;
+  --bm-surface: #14241D;
+  --bm-surface-subtle: #192C23;
+  --bm-border: #23382E;
+  --bm-glass: rgba(13, 24, 19, 0.80);
+  --bm-text: #ECF3EE;
+  --bm-text-muted: #94ACA0;
+
+  /* Semantic Status Tokens */
+  --bm-status-emergency: #C93B3B;
+  --bm-status-prompt: #C47A2C;
+  --bm-status-routine: #2B7A78;
+  --bm-status-confirmed: #68C294;
+
+  color-scheme: dark;
+}
+
+@theme inline {
+  --font-sans: "Plus Jakarta Sans", "Nunito Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --color-bm-primary: var(--bm-primary);
+  --color-bm-primary-hover: var(--bm-primary-hover);
+  --color-bm-primary-foreground: var(--bm-primary-foreground);
+  --color-bm-secondary: var(--bm-secondary);
+  --color-bm-sage: var(--bm-sage);
+  --color-bm-tint: var(--bm-tint);
+  --color-bm-bg: var(--bm-bg);
+  --color-bm-surface: var(--bm-surface);
+  --color-bm-surface-subtle: var(--bm-surface-subtle);
+  --color-bm-border: var(--bm-border);
+  --color-bm-text: var(--bm-text);
+  --color-bm-text-muted: var(--bm-text-muted);
+  --color-bm-emergency: var(--bm-status-emergency);
+  --color-bm-prompt: var(--bm-status-prompt);
+  --color-bm-routine: var(--bm-status-routine);
+  --color-bm-confirmed: var(--bm-status-confirmed);
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    background-color: var(--bm-bg);
+    color: var(--bm-text);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background-color: var(--bm-bg);
+    color: var(--bm-text);
+    overflow-x: hidden;
+  }
+
+  .dark body {
+    letter-spacing: 0.005em;
+  }
+
+  button,
+  a {
+    cursor: pointer;
+  }
+
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    outline: 2px solid var(--bm-primary);
+    outline-offset: 2px;
+  }
+}
+
+.bm-glass {
+  background-color: var(--bm-glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.bm-card {
+  background-color: var(--bm-surface);
+  border: 1px solid var(--bm-border);
+  box-shadow: 0 1px 2px rgba(19, 34, 27, 0.03);
+}
+
+.dark .bm-card {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.24);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media print {
+  @page {
+    margin: 14mm;
+  }
+
+  :root,
+  .dark {
+    --bm-primary: #1B4332;
+    --bm-primary-hover: #2D6A4F;
+    --bm-primary-foreground: #FFFFFF;
+    --bm-secondary: #2D6A4F;
+    --bm-sage: #A8BFA8;
+    --bm-tint: #E3EFE8;
+    --bm-bg: #FFFFFF;
+    --bm-surface: #FFFFFF;
+    --bm-surface-subtle: #F6F8F5;
+    --bm-border: #D5DDD7;
+    --bm-glass: #FFFFFF;
+    --bm-text: #13221B;
+    --bm-text-muted: #4A5D52;
+    --bm-status-emergency: #C93B3B;
+    --bm-status-prompt: #C47A2C;
+    --bm-status-routine: #2B7A78;
+    --bm-status-confirmed: #2D6A4F;
+    color-scheme: light;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  html,
+  body {
+    background: #FFFFFF !important;
+    color: #13221B !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .bm-card,
+  .bm-glass {
+    background: #FFFFFF !important;
+    border-color: #D5DDD7 !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .print-break-avoid {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .print-main {
+    padding-top: 0 !important;
+  }
+
+  body.printing-brief .baymini-app-shell {
+    display: none !important;
+  }
+
+  body.printing-brief .brief-print-overlay {
+    position: static !important;
+    inset: auto !important;
+    background: #FFFFFF !important;
+    backdrop-filter: none !important;
+    padding: 0 !important;
+    display: block !important;
+    overflow: visible !important;
+  }
+
+  body.printing-brief .brief-print-sheet {
+    max-width: none !important;
+    max-height: none !important;
+    overflow: visible !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    background: #FFFFFF !important;
+    color: #13221B !important;
+    padding: 0 !important;
+  }
+
+  a {
+    text-decoration: none !important;
+    color: #13221B !important;
+  }
+}
