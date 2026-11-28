@@ -1,33 +1,13 @@
 import {
   Activity,
   ArrowRight,
-  CalendarCheck,
   ClipboardList,
   Leaf,
   MapPin,
-  Stethoscope,
-  SunMedium,
 } from 'lucide-react';
 import { useBaymini } from '../context/BayminiContext';
 import type { ActiveView } from '../types/baymini';
-
-const PREVIEW_ROWS = [
-  {
-    icon: SunMedium,
-    title: 'Morning Routine',
-    description: '15-min stretch, hydration & balanced local breakfast',
-  },
-  {
-    icon: Stethoscope,
-    title: 'Symptom Guidance',
-    description: 'Adaptive triage with clear urgency & specialist match',
-  },
-  {
-    icon: CalendarCheck,
-    title: 'Care & Schedule',
-    description: 'Live nearby clinics synced straight to Google Calendar',
-  },
-] as const;
+import { HeroSessionCard } from './HeroSessionCard';
 
 const CORE_FEATURES: ReadonlyArray<{
   step: string;
@@ -119,49 +99,9 @@ export function HomeView() {
               </div>
             </div>
 
-            {/* Right Column — Restrained Frosted-Glass Preview Card */}
+            {/* Right Column — Dynamic Quick Start / Health Snapshot Card */}
             <div className="lg:col-span-5">
-              <aside
-                aria-label="Today with Baymini overview"
-                className="bm-glass border border-bm-border rounded-2xl p-6 sm:p-7 shadow-[0_10px_34px_rgba(19,34,27,0.04)] dark:shadow-[0_10px_34px_rgba(0,0,0,0.32)]"
-              >
-                <div className="flex items-center justify-between pb-4 border-b border-bm-border">
-                  <h2 className="text-sm font-semibold tracking-tight text-bm-text">
-                    Today with Baymini
-                  </h2>
-                  <span className="text-xs text-bm-text-muted">
-                    Daily rhythm
-                  </span>
-                </div>
-
-                <ul className="divide-y divide-bm-border">
-                  {PREVIEW_ROWS.map((row) => {
-                    const Icon = row.icon;
-                    return (
-                      <li
-                        key={row.title}
-                        className="py-4 first:pt-5 last:pb-1 flex items-start gap-3.5"
-                      >
-                        <div className="w-9 h-9 rounded-xl bg-bm-tint text-bm-primary flex items-center justify-center shrink-0 mt-0.5">
-                          <Icon
-                            className="w-[18px] h-[18px]"
-                            strokeWidth={1.75}
-                            aria-hidden="true"
-                          />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-sm font-semibold text-bm-text leading-snug">
-                            {row.title}
-                          </p>
-                          <p className="mt-1 text-xs sm:text-[13px] leading-relaxed text-bm-text-muted">
-                            {row.description}
-                          </p>
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </aside>
+              <HeroSessionCard />
             </div>
           </div>
         </div>

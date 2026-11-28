@@ -60,7 +60,15 @@ interface BayminiContextValue {
   cancelBooking: (id: string) => void;
   isBookingsDrawerOpen: boolean;
   openBookingsDrawer: () => void;
+  openMyBookings: () => void;
   closeBookingsDrawer: () => void;
+  isChatbotOpen: boolean;
+  chatbotOpenTrigger: number;
+  chatbotPrefillPrompt: string | null;
+  openChatbot: (prefillPrompt?: string) => void;
+  closeChatbot: () => void;
+  toggleChatbot: () => void;
+  consumeChatbotPrefill: () => void;
   mapsQuotaExceeded: boolean;
   dismissMapsQuotaBanner: () => void;
   chatMessages: ChatMessage[];
@@ -82,6 +90,11 @@ export function BayminiProvider({ children }: { children: React.ReactNode }) {
     loadSessionState()
   );
   const [isBookingsDrawerOpen, setIsBookingsDrawerOpen] = useState(false);
+  const [isChatbotOpen, setIsChatbotOpen] = useState(false);
+  const [chatbotOpenTrigger, setChatbotOpenTrigger] = useState(0);
+  const [chatbotPrefillPrompt, setChatbotPrefillPrompt] = useState<string | null>(
+    null
+  );
   const [mapsQuotaExceeded, setMapsQuotaExceeded] = useState(false);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const toastTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(
@@ -226,6 +239,32 @@ export function BayminiProvider({ children }: { children: React.ReactNode }) {
     setIsBookingsDrawerOpen(false);
   }, []);
 
+  const openChatbot = useCallback((prefillPrompt?: string) => {
+    setIsChatbotOpen(true);
+    setChatbotOpenTrigger((prev) => prev + 1);
+    if (typeof prefillPrompt === 'string' && prefillPrompt.trim().length > 0) {
+      setChatbotPrefillPrompt(prefillPrompt.trim());
+    }
+  }, []);
+
+  const closeChatbot = useCallback(() => {
+    setIsChatbotOpen(false);
+  }, []);
+
+  const toggleChatbot = useCallback(() => {
+    setIsChatbotOpen((prev) => {
+      const next = !prev;
+      if (next) {
+        setChatbotOpenTrigger((count) => count + 1);
+      }
+      return next;
+    });
+  }, []);
+
+  const consumeChatbotPrefill = useCallback(() => {
+    setChatbotPrefillPrompt(null);
+  }, []);
+
   const dismissMapsQuotaBanner = useCallback(() => {
     setMapsQuotaExceeded(false);
   }, []);
@@ -234,6 +273,7 @@ export function BayminiProvider({ children }: { children: React.ReactNode }) {
     clearSessionState();
     setSession(createInitialSessionState());
     setIsBookingsDrawerOpen(false);
+    setChatbotPrefillPrompt(null);
   }, []);
 
   const dismissToast = useCallback((id: string) => {
@@ -290,7 +330,15 @@ export function BayminiProvider({ children }: { children: React.ReactNode }) {
       cancelBooking,
       isBookingsDrawerOpen,
       openBookingsDrawer,
+      openMyBookings: openBookingsDrawer,
       closeBookingsDrawer,
+      isChatbotOpen,
+      chatbotOpenTrigger,
+      chatbotPrefillPrompt,
+      openChatbot,
+      closeChatbot,
+      toggleChatbot,
+      consumeChatbotPrefill,
       mapsQuotaExceeded,
       dismissMapsQuotaBanner,
       chatMessages: session.chatMessages,
@@ -323,6 +371,13 @@ export function BayminiProvider({ children }: { children: React.ReactNode }) {
       isBookingsDrawerOpen,
       openBookingsDrawer,
       closeBookingsDrawer,
+      isChatbotOpen,
+      chatbotOpenTrigger,
+      chatbotPrefillPrompt,
+      openChatbot,
+      closeChatbot,
+      toggleChatbot,
+      consumeChatbotPrefill,
       mapsQuotaExceeded,
       dismissMapsQuotaBanner,
       addChatMessage,

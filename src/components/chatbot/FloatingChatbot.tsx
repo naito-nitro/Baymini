@@ -32,9 +32,14 @@ export function FloatingChatbot() {
     chatMessages,
     addChatMessage,
     clearChatMessages,
+    isChatbotOpen,
+    chatbotOpenTrigger,
+    chatbotPrefillPrompt,
+    closeChatbot,
+    toggleChatbot,
+    consumeChatbotPrefill,
   } = useBaymini();
 
-  const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const [failedPrompt, setFailedPrompt] = useState<string | null>(null);
@@ -65,21 +70,33 @@ export function FloatingChatbot() {
   );
 
   useEffect(() => {
-    if (isOpen) {
+    if (isChatbotOpen) {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [chatMessages, isOpen, sending]);
+  }, [chatMessages, isChatbotOpen, sending]);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isChatbotOpen) return;
+    if (chatbotPrefillPrompt) {
+      setInput(chatbotPrefillPrompt);
+      consumeChatbotPrefill();
+    }
+    const rafId = window.requestAnimationFrame(() => {
+      textareaRef.current?.focus();
+    });
+    return () => window.cancelAnimationFrame(rafId);
+  }, [isChatbotOpen, chatbotOpenTrigger, chatbotPrefillPrompt, consumeChatbotPrefill]);
+
+  useEffect(() => {
+    if (!isChatbotOpen) return;
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        setIsOpen(false);
+        closeChatbot();
       }
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen]);
+  }, [isChatbotOpen, closeChatbot]);
 
   const sendMessage = async (rawText: string, isRetry = false) => {
     const trimmed = rawText.trim();
@@ -162,7 +179,7 @@ export function FloatingChatbot() {
       navigateTo(action.targetView);
     }
     if (typeof window !== 'undefined' && window.innerWidth < 768) {
-      setIsOpen(false);
+      closeChatbot();
     }
   };
 
@@ -176,7 +193,7 @@ export function FloatingChatbot() {
   return (
     <div className="no-print">
       {/* Frosted-Glass Chat Panel */}
-      {isOpen && (
+      {isChatbotOpen && (
         <section
           aria-label="Baymini Health Assistant"
           className="fixed z-50 inset-x-3 bottom-20 sm:inset-x-auto sm:right-5 sm:bottom-20 sm:w-[380px] max-h-[75vh] sm:max-h-[560px] flex flex-col rounded-2xl border border-bm-border bg-white/92 dark:bg-[#101E17]/92 backdrop-blur-md shadow-[0_18px_50px_rgba(13,24,19,0.16)] dark:shadow-[0_18px_50px_rgba(0,0,0,0.55)] overflow-hidden"
@@ -215,7 +232,7 @@ export function FloatingChatbot() {
               )}
               <button
                 type="button"
-                onClick={() => setIsOpen(false)}
+                onClick={closeChatbot}
                 aria-label="Close chat panel"
                 className="w-8 h-8 rounded-full hover:bg-bm-tint text-bm-text-muted hover:text-bm-text flex items-center justify-center transition-colors"
               >
@@ -449,16 +466,16 @@ export function FloatingChatbot() {
       {/* Fixed Bottom-Right Floating Trigger Button */}
       <button
         type="button"
-        onClick={() => setIsOpen((prev) => !prev)}
-        aria-expanded={isOpen}
+        onClick={toggleChatbot}
+        aria-expanded={isChatbotOpen}
         aria-label={
-          isOpen
+          isChatbotOpen
             ? 'Close Baymini Health Assistant'
             : 'Open Baymini Health Assistant'
         }
         className="fixed bottom-5 right-5 z-40 w-13 h-13 rounded-full bg-bm-primary hover:bg-bm-primary-hover text-white dark:text-[#0D1813] shadow-[0_8px_24px_rgba(19,34,27,0.22)] dark:shadow-[0_8px_24px_rgba(0,0,0,0.5)] flex items-center justify-center transition-all duration-150"
       >
-        {isOpen ? (
+        {isChatbotOpen ? (
           <X className="w-5 h-5" strokeWidth={1.75} aria-hidden="true" />
         ) : (
           <MessageCircle
